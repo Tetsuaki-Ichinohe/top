@@ -1,105 +1,119 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <title>EA Dashboard</title>
+<meta charset="UTF-8">
+<title>Dual EA Dashboard</title>
 
-  <!-- キャッシュ完全無効化 -->
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta http-equiv="Pragma" content="no-cache">
-  <meta http-equiv="Expires" content="0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #111;
-      color: #fff;
-      text-align: center;
-    }
-    .card {
-      background: #1e1e1e;
-      padding: 20px;
-      margin: 20px auto;
-      width: 300px;
-      border-radius: 10px;
-    }
-    canvas {
-      background: #fff;
-      border-radius: 10px;
-      margin-top: 20px;
-    }
-  </style>
+<style>
+body {
+  background:#111;
+  color:white;
+  font-family:Arial;
+  text-align:center;
+}
+.container {
+  display:flex;
+  justify-content:center;
+  gap:40px;
+  flex-wrap:wrap;
+}
+.card {
+  background:#1e1e1e;
+  padding:20px;
+  border-radius:10px;
+  width:500px;
+}
+canvas {
+  background:white;
+  border-radius:10px;
+}
+</style>
 </head>
+
 <body>
 
-<h1>EA Performance Dashboard</h1>
+<h1>Forward Test Monitor</h1>
 
-<div class="card">
-  <p>Balance: <span id="balance"></span></p>
-  <p>Profit: <span id="profit"></span></p>
-  <p>Win Rate: <span id="winrate"></span>%</p>
-  <p>Max DD: <span id="maxdd"></span></p>
+<div class="container">
+
+  <div class="card">
+    <h2>EA1</h2>
+    <div id="ea1_stats"></div>
+    <canvas id="chart1" width="450" height="250"></canvas>
+  </div>
+
+  <div class="card">
+    <h2>EA2</h2>
+    <div id="ea2_stats"></div>
+    <canvas id="chart2" width="450" height="250"></canvas>
+  </div>
+
 </div>
 
-<canvas id="equityChart" width="600" height="300"></canvas>
-
 <script>
-  // 🔐 ログインチェック
-  if (sessionStorage.getItem("auth") !== "true") {
-    window.location.href = "index.html";
-  }
 
-  // 🔄 キャッシュ回避付きJSON取得
-  fetch("result.json?t=" + Date.now())
-    .then(response => response.json())
+function loadEA(jsonFile, statsId, chartId) {
+
+  fetch(jsonFile + "?t=" + Date.now())
+    .then(res => res.json())
     .then(data => {
 
       // 数値表示
-      document.getElementById("balance").innerText = data.balance.toLocaleString();
-      document.getElementById("profit").innerText = data.profit.toLocaleString();
-      document.getElementById("winrate").innerText = data.winrate;
-      document.getElementById("maxdd").innerText = data.max_dd.toLocaleString();
+      document.getElementById(statsId).innerHTML =
+        "Balance: " + Number(data.balance).toLocaleString() + "<br>" +
+        "Profit: " + Number(data.profit).toLocaleString() + "<br>" +
+        "WinRate: " + Number(data.winrate) + "%<br>" +
+        "MaxDD: " + Number(data.max_dd).toLocaleString();
 
-      // 📈 グラフ描画
-      const ctx = document.getElementById("equityChart").getContext("2d");
+      // グラフ
+      if (Array.isArray(data.equity_curve)) {
 
-      new Chart(ctx, {
-        type: "line",
-        data: {
-          labels: data.equity_curve.map((_, i) => i + 1),
-          datasets: [{
-            label: "Equity Curve",
-            data: data.equity_curve,
-            borderWidth: 2,
-            fill: false
-          }]
-        },
-        options: {
-          responsive: false,
-          plugins: {
-            legend: {
-              labels: {
-                color: "white"
-              }
-            }
+        new Chart(document.getElementById(chartId), {
+          type: "line",
+          data: {
+            labels: data.equity_curve.map((_, i) => i + 1),
+            datasets: [{
+              label: "Equity",
+              data: data.equity_curve,
+              borderWidth: 2,
+              fill: false
+            }]
           },
-          scales: {
-            x: {
-              ticks: { color: "white" }
+          options: {
+            responsive: false,
+            plugins: {
+              legend: {
+                labels: { color: "white" }
+              }
             },
-            y: {
-              ticks: { color: "white" }
+            scales: {
+              x: { ticks: { color: "white" }},
+              y: { ticks: { color: "white" }}
             }
           }
-        }
-      });
+        });
+
+      }
 
     })
-    .catch(error => {
-      console.error("JSON読み込みエラー:", error);
-    });
+    .catch(err => console.error("Error:", err));
+}
+
+// 2つ読み込み
+loadEA("result_ea1.json", "ea1_stats", "chart1");
+loadEA("result_ea2.json", "ea2_stats", "chart2");
+
+// 1分ごと自動更新（監視用）
+setInterval(() => {
+  location.reload();
+}, 60000);
+
 </script>
 
 </body>
