@@ -2,9 +2,25 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>My Site</title>
+  <title>Login</title>
 </head>
 <body>
-  <h1>Hello World</h1>
+  <h2>EA Dashboard Login</h2>
+  <input type="password" id="password" placeholder="Password">
+  <button onclick="checkPassword()">Login</button>
+
+  <script>
+    function checkPassword() {
+      const correct = "mysecret123";  // ←変更
+      const input = document.getElementById("password").value;
+
+      if (input === correct) {
+        sessionStorage.setItem("auth", "true");
+        window.location.href = "dashboard.html";
+      } else {
+        alert("Wrong password");
+      }
+    }
+  </script>
 </body>
 </html>

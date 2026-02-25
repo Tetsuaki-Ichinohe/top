@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>EA Dashboard</title>
+</head>
+<body>
+  <h1>EA Performance</h1>
+  <div id="result"></div>
+
+  <script>
+    if (sessionStorage.getItem("auth") !== "true") {
+      window.location.href = "index.html";
+    }
+
+    fetch("result.json")
+      .then(response => response.json())
+      .then(data => {
+        document.getElementById("result").innerHTML =
+          "Balance: " + data.balance + "<br>" +
+          "Profit: " + data.profit + "<br>" +
+          "WinRate: " + data.winrate + "%";
+      });
+  </script>
+</body>
+</html>
