@@ -3,24 +3,104 @@
 <head>
   <meta charset="UTF-8">
   <title>EA Dashboard</title>
+
+  <!-- キャッシュ完全無効化 -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: #fff;
+      text-align: center;
+    }
+    .card {
+      background: #1e1e1e;
+      padding: 20px;
+      margin: 20px auto;
+      width: 300px;
+      border-radius: 10px;
+    }
+    canvas {
+      background: #fff;
+      border-radius: 10px;
+      margin-top: 20px;
+    }
+  </style>
 </head>
 <body>
-  <h1>EA Performance</h1>
-  <div id="result"></div>
 
-  <script>
-    if (sessionStorage.getItem("auth") !== "true") {
-      window.location.href = "index.html";
-    }
+<h1>EA Performance Dashboard</h1>
 
-    fetch("result.json")
-      .then(response => response.json())
-      .then(data => {
-        document.getElementById("result").innerHTML =
-          "Balance: " + data.balance + "<br>" +
-          "Profit: " + data.profit + "<br>" +
-          "WinRate: " + data.winrate + "%";
+<div class="card">
+  <p>Balance: <span id="balance"></span></p>
+  <p>Profit: <span id="profit"></span></p>
+  <p>Win Rate: <span id="winrate"></span>%</p>
+  <p>Max DD: <span id="maxdd"></span></p>
+</div>
+
+<canvas id="equityChart" width="600" height="300"></canvas>
+
+<script>
+  // 🔐 ログインチェック
+  if (sessionStorage.getItem("auth") !== "true") {
+    window.location.href = "index.html";
+  }
+
+  // 🔄 キャッシュ回避付きJSON取得
+  fetch("result.json?t=" + Date.now())
+    .then(response => response.json())
+    .then(data => {
+
+      // 数値表示
+      document.getElementById("balance").innerText = data.balance.toLocaleString();
+      document.getElementById("profit").innerText = data.profit.toLocaleString();
+      document.getElementById("winrate").innerText = data.winrate;
+      document.getElementById("maxdd").innerText = data.max_dd.toLocaleString();
+
+      // 📈 グラフ描画
+      const ctx = document.getElementById("equityChart").getContext("2d");
+
+      new Chart(ctx, {
+        type: "line",
+        data: {
+          labels: data.equity_curve.map((_, i) => i + 1),
+          datasets: [{
+            label: "Equity Curve",
+            data: data.equity_curve,
+            borderWidth: 2,
+            fill: false
+          }]
+        },
+        options: {
+          responsive: false,
+          plugins: {
+            legend: {
+              labels: {
+                color: "white"
+              }
+            }
+          },
+          scales: {
+            x: {
+              ticks: { color: "white" }
+            },
+            y: {
+              ticks: { color: "white" }
+            }
+          }
+        }
       });
-  </script>
+
+    })
+    .catch(error => {
+      console.error("JSON読み込みエラー:", error);
+    });
+</script>
+
 </body>
 </html>
