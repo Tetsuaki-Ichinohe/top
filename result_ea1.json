@@ -1,9 +1,9 @@
 {
-"timestamp":"2020.03.27 21:35:00",
-"balance":1028310.00,
-"equity":1028310.00,
+"timestamp":"2020.04.09 11:14:00",
+"balance":1025289.00,
+"equity":1025289.00,
 "margin":0.00,
-"free_margin":1028310.00,
-"drawdown_percent":0.00,
+"free_margin":1025289.00,
+"drawdown_percent":0.29,
 "open_positions":0
 }
