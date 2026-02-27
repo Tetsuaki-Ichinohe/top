@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -31,27 +31,23 @@ body {
   width:500px;
 }
 canvas {
-  width: 100%;
-  background: white;
-  border-radius: 10px;
+  width:100%;
+  background:white;
+  border-radius:10px;
 }
 
-@media (max-width: 768px) {
+.dd-low { color:#00ff99; }
+.dd-high { color:#ff4d4d; }
 
+@media (max-width: 768px) {
   .container {
     flex-direction: column;
     align-items: center;
   }
-
   .card {
-    width: 95%;
-  }
-
-  canvas {
-    width: 100% !important;
+    width:95%;
   }
 }
-
 </style>
 </head>
 
@@ -62,7 +58,7 @@ canvas {
 <div class="container">
 
   <div class="card">
-    <h2>EA1</h2>
+    <h2>EA1 (New Format)</h2>
     <div id="ea1_stats"></div>
     <canvas id="chart1"></canvas>
   </div>
@@ -77,23 +73,84 @@ canvas {
 
 <script>
 
-function loadEA(jsonFile, statsId, chartId) {
+let chart1;
+let equityHistoryEA1 = [];
 
-  fetch(jsonFile + "?t=" + Date.now())
+function loadEA1() {
+
+  fetch("result_ea1.json?t=" + Date.now())
     .then(res => res.json())
     .then(data => {
 
-      // 数値表示
-      document.getElementById(statsId).innerHTML =
+      // ===== 数値表示 =====
+      let ddClass = data.drawdown_percent > 5 ? "dd-high" : "dd-low";
+
+      document.getElementById("ea1_stats").innerHTML =
+        "Timestamp: " + data.timestamp + "<br>" +
+        "Balance: " + Number(data.balance).toLocaleString() + "<br>" +
+        "Equity: " + Number(data.equity).toLocaleString() + "<br>" +
+        "Drawdown: <span class='" + ddClass + "'>" +
+        Number(data.drawdown_percent).toFixed(2) + "%</span><br>" +
+        "Open Positions: " + data.open_positions;
+
+      // ===== Equity履歴（ブラウザ側蓄積） =====
+      equityHistoryEA1.push(data.equity);
+      if (equityHistoryEA1.length > 50) {
+        equityHistoryEA1.shift();
+      }
+
+      updateChartEA1();
+    });
+}
+
+function updateChartEA1() {
+
+  if (!chart1) {
+    chart1 = new Chart(document.getElementById("chart1"), {
+      type: "line",
+      data: {
+        labels: equityHistoryEA1.map((_, i) => i + 1),
+        datasets: [{
+          label: "Equity",
+          data: equityHistoryEA1,
+          borderWidth: 2,
+          fill: false
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { labels: { color: "white" } }
+        },
+        scales: {
+          x: { ticks: { color: "white" }},
+          y: { ticks: { color: "white" }}
+        }
+      }
+    });
+  } else {
+    chart1.data.labels = equityHistoryEA1.map((_, i) => i + 1);
+    chart1.data.datasets[0].data = equityHistoryEA1;
+    chart1.update();
+  }
+}
+
+
+// ===== EA2（旧フォーマットのまま） =====
+function loadEA2() {
+
+  fetch("result_ea2.json?t=" + Date.now())
+    .then(res => res.json())
+    .then(data => {
+
+      document.getElementById("ea2_stats").innerHTML =
         "Balance: " + Number(data.balance).toLocaleString() + "<br>" +
         "Profit: " + Number(data.profit).toLocaleString() + "<br>" +
         "WinRate: " + Number(data.winrate) + "%<br>" +
         "MaxDD: " + Number(data.max_dd).toLocaleString();
 
-      // グラフ
       if (Array.isArray(data.equity_curve)) {
-
-        new Chart(document.getElementById(chartId), {
+        new Chart(document.getElementById("chart2"), {
           type: "line",
           data: {
             labels: data.equity_curve.map((_, i) => i + 1),
@@ -105,34 +162,24 @@ function loadEA(jsonFile, statsId, chartId) {
             }]
           },
           options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-              legend: {
-                labels: { color: "white" }
-              }
-            },
-            scales: {
-              x: { ticks: { color: "white" }},
-              y: { ticks: { color: "white" }}
-            }
+            responsive: true
           }
         });
-
       }
 
-    })
-    .catch(err => console.error("Error:", err));
+    });
 }
 
-// 2つ読み込み
-loadEA("result_ea1.json", "ea1_stats", "chart1");
-loadEA("result_ea2.json", "ea2_stats", "chart2");
 
-// 1分ごと自動更新（監視用）
+// ===== 初回読み込み =====
+loadEA1();
+loadEA2();
+
+// 30秒ごと更新（ページリロードなし）
 setInterval(() => {
-  location.reload();
-}, 60000);
+  loadEA1();
+  loadEA2();
+}, 30000);
 
 </script>
 
