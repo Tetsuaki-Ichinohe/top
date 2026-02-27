@@ -73,7 +73,7 @@ canvas {
 
 <script>
 
-let chart1;
+let chart1 = null;
 let equityHistoryEA1 = [];
 
 function loadEA1() {
@@ -82,7 +82,6 @@ function loadEA1() {
     .then(res => res.json())
     .then(data => {
 
-      // ===== 数値表示 =====
       let ddClass = data.drawdown_percent > 5 ? "dd-high" : "dd-low";
 
       document.getElementById("ea1_stats").innerHTML =
@@ -93,14 +92,50 @@ function loadEA1() {
         Number(data.drawdown_percent).toFixed(2) + "%</span><br>" +
         "Open Positions: " + data.open_positions;
 
-      // ===== Equity履歴（ブラウザ側蓄積） =====
+      // ===== 履歴 =====
       equityHistoryEA1.push(data.equity);
       if (equityHistoryEA1.length > 50) {
         equityHistoryEA1.shift();
       }
 
-      updateChartEA1();
-    });
+      // ===== 初回のみ生成 =====
+      if (!chart1) {
+
+        const ctx = document.getElementById("chart1").getContext("2d");
+
+        chart1 = new Chart(ctx, {
+          type: "line",
+          data: {
+            labels: equityHistoryEA1.map((_, i) => i + 1),
+            datasets: [{
+              label: "Equity",
+              data: equityHistoryEA1,
+              borderColor: "#00ff99",
+              borderWidth: 2,
+              fill: false
+            }]
+          },
+          options: {
+            responsive: true,
+            animation: false,
+            scales: {
+              x: { ticks: { color: "white" }},
+              y: { ticks: { color: "white" }}
+            },
+            plugins: {
+              legend: { labels: { color: "white" } }
+            }
+          }
+        });
+
+      } else {
+        chart1.data.labels = equityHistoryEA1.map((_, i) => i + 1);
+        chart1.data.datasets[0].data = equityHistoryEA1;
+        chart1.update();
+      }
+
+    })
+    .catch(err => console.error("EA1 error:", err));
 }
 
 function updateChartEA1() {
