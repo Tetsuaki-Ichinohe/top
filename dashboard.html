@@ -78,21 +78,48 @@ let equityHistoryEA1 = [];
 
 function loadEA1() {
 
-  console.log("Fetching EA1...");
-
   fetch("result_ea1.json?t=" + Date.now())
-    .then(res => {
-      console.log("Status:", res.status);
-      return res.text();
-    })
-    .then(text => {
-      console.log("Raw JSON:", text);
-
-      const data = JSON.parse(text);
-      console.log("Parsed:", data);
+    .then(res => res.json())
+    .then(data => {
 
       document.getElementById("ea1_stats").innerHTML =
-        "Balance: " + data.balance;
+        "Timestamp: " + data.timestamp + "<br>" +
+        "Balance: " + Number(data.balance).toLocaleString() + "<br>" +
+        "Equity: " + Number(data.equity).toLocaleString() + "<br>" +
+        "Drawdown: " + Number(data.drawdown_percent).toFixed(2) + "%<br>" +
+        "Open Positions: " + data.open_positions;
+
+      equityHistoryEA1.push(data.equity);
+      if (equityHistoryEA1.length > 50) {
+        equityHistoryEA1.shift();
+      }
+
+      const ctx = document.getElementById("chart1").getContext("2d");
+
+      if (!chart1) {
+        chart1 = new Chart(ctx, {
+          type: "line",
+          data: {
+            labels: equityHistoryEA1.map((_, i) => i + 1),
+            datasets: [{
+              label: "Equity",
+              data: equityHistoryEA1,
+              borderColor: "#00ff99",
+              borderWidth: 2,
+              fill: false
+            }]
+          },
+          options: {
+            animation: false,
+            responsive: true
+          }
+        });
+      } else {
+        chart1.data.labels = equityHistoryEA1.map((_, i) => i + 1);
+        chart1.data.datasets[0].data = equityHistoryEA1;
+        chart1.update();
+      }
+
     })
     .catch(err => console.error("EA1 error:", err));
 }
