@@ -140,20 +140,26 @@ function loadEA1() {
 
 function updateChartEA1() {
 
+  const ctx = document.getElementById("chart1").getContext("2d");
+
   if (!chart1) {
-    chart1 = new Chart(document.getElementById("chart1"), {
+
+    chart1 = new Chart(ctx, {
       type: "line",
       data: {
         labels: equityHistoryEA1.map((_, i) => i + 1),
         datasets: [{
           label: "Equity",
           data: equityHistoryEA1,
+          borderColor: "#00ff99",
           borderWidth: 2,
-          fill: false
+          fill: false,
+          tension: 0.2
         }]
       },
       options: {
         responsive: true,
+        animation: false,
         plugins: {
           legend: { labels: { color: "white" } }
         },
@@ -163,13 +169,15 @@ function updateChartEA1() {
         }
       }
     });
+
   } else {
+
     chart1.data.labels = equityHistoryEA1.map((_, i) => i + 1);
     chart1.data.datasets[0].data = equityHistoryEA1;
     chart1.update();
+
   }
 }
-
 
 // ===== EA2（旧フォーマットのまま） =====
 function loadEA2() {
