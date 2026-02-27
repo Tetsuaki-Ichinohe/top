@@ -78,62 +78,21 @@ let equityHistoryEA1 = [];
 
 function loadEA1() {
 
-  fetch("result_ea1.json?t=" + Date.now())
-    .then(res => res.json())
-    .then(data => {
+  console.log("Fetching EA1...");
 
-      let ddClass = data.drawdown_percent > 5 ? "dd-high" : "dd-low";
+  fetch("result_ea1.json?t=" + Date.now())
+    .then(res => {
+      console.log("Status:", res.status);
+      return res.text();
+    })
+    .then(text => {
+      console.log("Raw JSON:", text);
+
+      const data = JSON.parse(text);
+      console.log("Parsed:", data);
 
       document.getElementById("ea1_stats").innerHTML =
-        "Timestamp: " + data.timestamp + "<br>" +
-        "Balance: " + Number(data.balance).toLocaleString() + "<br>" +
-        "Equity: " + Number(data.equity).toLocaleString() + "<br>" +
-        "Drawdown: <span class='" + ddClass + "'>" +
-        Number(data.drawdown_percent).toFixed(2) + "%</span><br>" +
-        "Open Positions: " + data.open_positions;
-
-      // ===== 履歴 =====
-      equityHistoryEA1.push(data.equity);
-      if (equityHistoryEA1.length > 50) {
-        equityHistoryEA1.shift();
-      }
-
-      // ===== 初回のみ生成 =====
-      if (!chart1) {
-
-        const ctx = document.getElementById("chart1").getContext("2d");
-
-        chart1 = new Chart(ctx, {
-          type: "line",
-          data: {
-            labels: equityHistoryEA1.map((_, i) => i + 1),
-            datasets: [{
-              label: "Equity",
-              data: equityHistoryEA1,
-              borderColor: "#00ff99",
-              borderWidth: 2,
-              fill: false
-            }]
-          },
-          options: {
-            responsive: true,
-            animation: false,
-            scales: {
-              x: { ticks: { color: "white" }},
-              y: { ticks: { color: "white" }}
-            },
-            plugins: {
-              legend: { labels: { color: "white" } }
-            }
-          }
-        });
-
-      } else {
-        chart1.data.labels = equityHistoryEA1.map((_, i) => i + 1);
-        chart1.data.datasets[0].data = equityHistoryEA1;
-        chart1.update();
-      }
-
+        "Balance: " + data.balance;
     })
     .catch(err => console.error("EA1 error:", err));
 }
